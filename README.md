@@ -104,6 +104,9 @@ config/
         ├── schedule.py
         ├── sensor.py
         ├── strings.json
+        ├── brand/
+        │   ├── icon.png
+        │   └── icon@2x.png
         ├── frontend/
         │   └── orar-activitati-card.js
         └── translations/
@@ -220,6 +223,12 @@ Câte activități de după masă are Bogdan azi:
 ```yaml
 {{ state_attr('sensor.bogdan_azi', 'activitati_dupa_masa') | count }}
 ```
+
+---
+
+## Iconița
+
+Integrarea își poartă propria iconiță, în `custom_components/ha_orar_activitati/brand/`. Home Assistant o preia automat de acolo, fără nicio configurare — începând cu **HA 2026.3**. Pe versiuni mai vechi, locul integrării în listă rămâne cu placeholderul „icon not available"; singura cale acolo e un PR în [home-assistant/brands](https://github.com/home-assistant/brands), sub `custom_integrations/ha_orar_activitati/`.
 
 ---
 
