@@ -1,0 +1,13 @@
+{
+  "domain": "ha_orar_activitati",
+  "name": "Orar & Activitati",
+  "codeowners": ["@ovidiumc"],
+  "config_flow": true,
+  "dependencies": ["http", "frontend"],
+  "documentation": "https://github.com/ovidiumc/ha-orar-activitati",
+  "integration_type": "device",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/ovidiumc/ha-orar-activitati/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

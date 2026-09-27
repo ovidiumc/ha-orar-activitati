@@ -1,0 +1,116 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a child",
+        "description": "Enter the child's name. The timetable is built afterwards, from the Configure button.",
+        "data": {
+          "nume_copil": "Child's name",
+          "clasa": "Class",
+          "culoare": "Accent colour"
+        },
+        "data_description": {
+          "clasa": "Shown under the name on the card, e.g. Cls. IV.",
+          "culoare": "Any CSS colour, e.g. #2196f3. Used for this child's column."
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "The name cannot be empty."
+    },
+    "abort": {
+      "already_configured": "This child is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Timetable",
+        "description": "Currently {numar} entries. Changes are saved when you choose Done.",
+        "menu_options": {
+          "adauga": "Add an entry",
+          "editeaza": "Edit an entry",
+          "sterge": "Remove entries",
+          "copil": "Child's details",
+          "gata": "Done (save)"
+        }
+      },
+      "adauga": {
+        "title": "New entry",
+        "description": "One entry can repeat on several weekdays — a lesson held on Monday and Wednesday is a single entry.",
+        "data": {
+          "titlu": "Name",
+          "zile": "Weekdays",
+          "ora_inceput": "Start",
+          "ora_sfarsit": "End",
+          "tip": "Type",
+          "sala": "Room / location",
+          "online": "Online",
+          "locatie_url": "Location link"
+        },
+        "data_description": {
+          "tip": "Activity entries are the ones shown as after-school in the card and counted by the afternoon attribute.",
+          "locatie_url": "Optional map or meeting link, shown as an icon on the card."
+        }
+      },
+      "modifica": {
+        "title": "Edit entry",
+        "description": "Editing: {intrare}",
+        "data": {
+          "titlu": "Name",
+          "zile": "Weekdays",
+          "ora_inceput": "Start",
+          "ora_sfarsit": "End",
+          "tip": "Type",
+          "sala": "Room / location",
+          "online": "Online",
+          "locatie_url": "Location link"
+        }
+      },
+      "editeaza": {
+        "title": "Which entry?",
+        "data": {
+          "id": "Entry"
+        }
+      },
+      "sterge": {
+        "title": "Remove entries",
+        "description": "Everything you tick here is removed when you save.",
+        "data": {
+          "id": "Entries"
+        }
+      },
+      "copil": {
+        "title": "Child's details",
+        "data": {
+          "nume_copil": "Child's name",
+          "clasa": "Class",
+          "culoare": "Accent colour"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "The name cannot be empty.",
+      "already_configured": "Another child already uses this name.",
+      "invalid_interval": "The end time must be after the start time.",
+      "no_days": "Pick at least one weekday."
+    }
+  },
+  "selector": {
+    "tip_intrare": {
+      "options": {
+        "scoala": "School",
+        "activitate": "Activity",
+        "pauza": "Break / lunch"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "acum": { "name": "Now" },
+      "urmatoarea": { "name": "Next" },
+      "azi": { "name": "Today" },
+      "maine": { "name": "Tomorrow" }
+    }
+  }
+}

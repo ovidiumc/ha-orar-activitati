@@ -1,0 +1,116 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Adaugă un copil",
+        "description": "Introdu numele copilului. Orarul se construiește după aceea, din butonul Configurează.",
+        "data": {
+          "nume_copil": "Numele copilului",
+          "clasa": "Clasa",
+          "culoare": "Culoare"
+        },
+        "data_description": {
+          "clasa": "Se afișează lângă nume pe card, ex. Cls. IV.",
+          "culoare": "Orice culoare CSS, ex. #2196f3. Se folosește pentru coloana acestui copil."
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "Numele nu poate fi gol."
+    },
+    "abort": {
+      "already_configured": "Acest copil este deja configurat."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Orar",
+        "description": "Momentan sunt {numar} intrări. Modificările se salvează când alegi Gata.",
+        "menu_options": {
+          "adauga": "Adaugă o intrare",
+          "editeaza": "Modifică o intrare",
+          "sterge": "Șterge intrări",
+          "copil": "Datele copilului",
+          "gata": "Gata (salvează)"
+        }
+      },
+      "adauga": {
+        "title": "Intrare nouă",
+        "description": "O intrare se poate repeta în mai multe zile — o materie ținută luni și miercuri este o singură intrare.",
+        "data": {
+          "titlu": "Denumire",
+          "zile": "Zilele săptămânii",
+          "ora_inceput": "Ora de început",
+          "ora_sfarsit": "Ora de sfârșit",
+          "tip": "Tip",
+          "sala": "Sala / locația",
+          "online": "Online",
+          "locatie_url": "Link locație"
+        },
+        "data_description": {
+          "tip": "Intrările de tip Activitate sunt cele afișate ca „după masă” pe card și numărate în atributul de după-amiază.",
+          "locatie_url": "Link opțional de hartă sau de întâlnire, afișat ca iconiță pe card."
+        }
+      },
+      "modifica": {
+        "title": "Modifică intrarea",
+        "description": "Modifici: {intrare}",
+        "data": {
+          "titlu": "Denumire",
+          "zile": "Zilele săptămânii",
+          "ora_inceput": "Ora de început",
+          "ora_sfarsit": "Ora de sfârșit",
+          "tip": "Tip",
+          "sala": "Sala / locația",
+          "online": "Online",
+          "locatie_url": "Link locație"
+        }
+      },
+      "editeaza": {
+        "title": "Care intrare?",
+        "data": {
+          "id": "Intrare"
+        }
+      },
+      "sterge": {
+        "title": "Șterge intrări",
+        "description": "Tot ce bifezi aici se șterge la salvare.",
+        "data": {
+          "id": "Intrări"
+        }
+      },
+      "copil": {
+        "title": "Datele copilului",
+        "data": {
+          "nume_copil": "Numele copilului",
+          "clasa": "Clasa",
+          "culoare": "Culoare"
+        }
+      }
+    },
+    "error": {
+      "invalid_name": "Numele nu poate fi gol.",
+      "already_configured": "Alt copil folosește deja acest nume.",
+      "invalid_interval": "Ora de sfârșit trebuie să fie după ora de început.",
+      "no_days": "Alege cel puțin o zi."
+    }
+  },
+  "selector": {
+    "tip_intrare": {
+      "options": {
+        "scoala": "Școală",
+        "activitate": "Activitate",
+        "pauza": "Pauză / masă"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "acum": { "name": "Acum" },
+      "urmatoarea": { "name": "Urmează" },
+      "azi": { "name": "Azi" },
+      "maine": { "name": "Mâine" }
+    }
+  }
+}
