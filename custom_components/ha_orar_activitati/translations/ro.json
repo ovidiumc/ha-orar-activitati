@@ -26,11 +26,12 @@
     "step": {
       "init": {
         "title": "Orar",
-        "description": "Momentan sunt {numar} intrări. Modificările se salvează când alegi Gata.",
+        "description": "Momentan sunt {numar} intrări și {libere} perioade libere. Modificările se salvează când alegi Gata.",
         "menu_options": {
           "adauga": "Adaugă o intrare",
           "editeaza": "Modifică o intrare",
           "sterge": "Șterge intrări",
+          "libere": "Zile libere (vacanțe)",
           "copil": "Datele copilului",
           "gata": "Gata (salvează)"
         }
@@ -87,13 +88,51 @@
           "clasa": "Clasa",
           "culoare": "Culoare"
         }
+      },
+      "libere": {
+        "title": "Zile libere",
+        "description": "{libere} perioade introduse. Sărbătorile legale românești: {sarbatori}. Într-o zi liberă orele de școală dispar din orar; activitățile rămân.",
+        "menu_options": {
+          "adauga_liber": "Adaugă o perioadă liberă",
+          "sterge_liber": "Șterge perioade libere",
+          "sarbatori": "Sărbători legale automate",
+          "init": "Înapoi"
+        }
+      },
+      "adauga_liber": {
+        "title": "Perioadă liberă nouă",
+        "description": "O perioadă acoperă o vacanță întreagă — pune aceeași dată de două ori pentru o singură zi liberă.",
+        "data": {
+          "denumire": "Denumire",
+          "data_inceput": "Prima zi",
+          "data_sfarsit": "Ultima zi"
+        },
+        "data_description": {
+          "denumire": "Se afișează pe card, ex. Vacanța de iarnă."
+        }
+      },
+      "sterge_liber": {
+        "title": "Șterge zile libere",
+        "description": "Tot ce bifezi aici se șterge la salvare.",
+        "data": {
+          "id": "Perioade"
+        }
+      },
+      "sarbatori": {
+        "title": "Sărbători legale automate",
+        "description": "Sărbătorile legale românești — inclusiv Paștele mobil — se calculează singure. Oprește-le dacă vrei doar perioadele introduse de tine.",
+        "data": {
+          "sarbatori_legale": "Folosește sărbătorile legale românești"
+        }
       }
     },
     "error": {
       "invalid_name": "Numele nu poate fi gol.",
       "already_configured": "Alt copil folosește deja acest nume.",
       "invalid_interval": "Ora de sfârșit trebuie să fie după ora de început.",
-      "no_days": "Alege cel puțin o zi."
+      "no_days": "Alege cel puțin o zi.",
+      "invalid_range": "Ultima zi nu poate fi înaintea primei zile.",
+      "no_name": "Denumirea nu poate fi goală."
     }
   },
   "selector": {
@@ -107,10 +146,18 @@
   },
   "entity": {
     "sensor": {
-      "acum": { "name": "Acum" },
-      "urmatoarea": { "name": "Urmează" },
-      "azi": { "name": "Azi" },
-      "maine": { "name": "Mâine" }
+      "acum": {
+        "name": "Acum"
+      },
+      "urmatoarea": {
+        "name": "Urmează"
+      },
+      "azi": {
+        "name": "Azi"
+      },
+      "maine": {
+        "name": "Mâine"
+      }
     }
   }
 }

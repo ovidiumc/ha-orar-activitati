@@ -8,7 +8,7 @@ own.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from typing import Any
@@ -159,14 +159,37 @@ def parse_entries(raw_entries: Iterable[Mapping[str, Any]]) -> list[ScheduleEntr
     return [entry for entry in parsed if entry is not None]
 
 
+#: Tells whether school is off on a given day. The default says it never
+#: is, so the pure functions here stay usable without a lookup.
+type FreeDayTest = Callable[[date], bool]
+
+
+def _never_free(day: date) -> bool:
+    """Default free-day test: every day is a school day."""
+    return False
+
+
 def entries_on(
-    entries: Sequence[ScheduleEntry], day: date
+    entries: Sequence[ScheduleEntry],
+    day: date,
+    *,
+    is_free: FreeDayTest = _never_free,
 ) -> list[ScheduleEntry]:
-    """Return the entries running on ``day``, in chronological order."""
-    return sorted(
+    """Return the entries running on ``day``, in chronological order.
+
+    On a free day the lessons and the breaks between them drop out, but the
+    activities stay: a public holiday closes the school, it does not cancel
+    football practice.
+    """
+    found = sorted(
         (entry for entry in entries if entry.occurs_on(day)),
         key=lambda entry: (entry.start, entry.end, entry.title),
     )
+
+    if is_free(day):
+        return [entry for entry in found if entry.kind == KIND_ACTIVITY]
+
+    return found
 
 
 def afternoon_entries(entries: Iterable[ScheduleEntry]) -> list[ScheduleEntry]:
@@ -175,17 +198,23 @@ def afternoon_entries(entries: Iterable[ScheduleEntry]) -> list[ScheduleEntry]:
 
 
 def current_entry(
-    entries: Sequence[ScheduleEntry], moment: datetime
+    entries: Sequence[ScheduleEntry],
+    moment: datetime,
+    *,
+    is_free: FreeDayTest = _never_free,
 ) -> ScheduleEntry | None:
     """Return the entry running at ``moment``, if any."""
-    for entry in entries_on(entries, moment.date()):
+    for entry in entries_on(entries, moment.date(), is_free=is_free):
         if entry.contains(moment.time()):
             return entry
     return None
 
 
 def next_entry(
-    entries: Sequence[ScheduleEntry], moment: datetime
+    entries: Sequence[ScheduleEntry],
+    moment: datetime,
+    *,
+    is_free: FreeDayTest = _never_free,
 ) -> tuple[ScheduleEntry, date] | None:
     """Return the next entry to start, and the day it starts on.
 
@@ -193,13 +222,13 @@ def next_entry(
     Friday-evening state is "Monday, 08:00 Matematică" rather than empty.
     Returns None only when the child has no entries at all.
     """
-    for entry in entries_on(entries, moment.date()):
+    for entry in entries_on(entries, moment.date(), is_free=is_free):
         if entry.start > moment.time():
             return entry, moment.date()
 
     for offset in range(1, 8):
         day = moment.date() + timedelta(days=offset)
-        upcoming = entries_on(entries, day)
+        upcoming = entries_on(entries, day, is_free=is_free)
         if upcoming:
             return upcoming[0], day
 
@@ -207,7 +236,10 @@ def next_entry(
 
 
 def next_scheduled_day(
-    entries: Sequence[ScheduleEntry], after: date
+    entries: Sequence[ScheduleEntry],
+    after: date,
+    *,
+    is_free: FreeDayTest = _never_free,
 ) -> date | None:
     """Return the first day after ``after`` that has anything scheduled.
 
@@ -223,13 +255,18 @@ def next_scheduled_day(
     """
     for offset in range(1, 8):
         day = after + timedelta(days=offset)
-        if entries_on(entries, day):
+        if entries_on(entries, day, is_free=is_free):
             return day
 
     return None
 
 
-def next_boundary(entries: Sequence[ScheduleEntry], moment: datetime) -> datetime:
+def next_boundary(
+    entries: Sequence[ScheduleEntry],
+    moment: datetime,
+    *,
+    is_free: FreeDayTest = _never_free,
+) -> datetime:
     """Return when the sensors must next be recalculated.
 
     That is the first start or end time still ahead of us today; failing
@@ -242,7 +279,7 @@ def next_boundary(entries: Sequence[ScheduleEntry], moment: datetime) -> datetim
 
     candidates = [
         datetime.combine(moment.date(), boundary, tzinfo=moment.tzinfo)
-        for entry in entries_on(entries, moment.date())
+        for entry in entries_on(entries, moment.date(), is_free=is_free)
         for boundary in (entry.start, entry.end)
     ]
     future = [candidate for candidate in candidates if candidate > moment]

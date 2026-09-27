@@ -27,6 +27,8 @@ from .const import (
     CONF_CLASS,
     CONF_COLOR,
     CONF_ENTRIES,
+    CONF_FREE_RANGES,
+    CONF_PUBLIC_HOLIDAYS,
     DEFAULT_COLOR,
     DOMAIN,
     ENTRY_DAYS,
@@ -39,14 +41,22 @@ from .const import (
     ENTRY_TITLE,
     ENTRY_URL,
     ERROR_ALREADY_CONFIGURED,
+    ERROR_INVALID_RANGE,
+    ERROR_NO_NAME,
     ERROR_INVALID_INTERVAL,
     ERROR_INVALID_NAME,
     ERROR_NO_DAYS,
+    FREE_END,
+    FREE_ID,
+    FREE_NAME,
+    FREE_START,
     KIND_SCHOOL,
     KINDS,
+    DATE_FORMAT_RO,
     TIME_FORMAT,
     WEEKDAY_NAMES_RO,
 )
+from .freedays import parse_date_value
 from .schedule import parse_time_value
 
 
@@ -167,6 +177,71 @@ def _slot_from_input(user_input: Mapping[str, Any], uid: str) -> dict[str, Any]:
     }
 
 
+def _free_schema(defaults: Mapping[str, Any]) -> vol.Schema:
+    """Build the form for one stretch of days without school."""
+    return vol.Schema(
+        {
+            vol.Required(
+                FREE_NAME,
+                description={"suggested_value": defaults.get(FREE_NAME)},
+            ): selector.TextSelector(),
+            vol.Required(
+                FREE_START,
+                description={"suggested_value": defaults.get(FREE_START)},
+            ): selector.DateSelector(),
+            vol.Required(
+                FREE_END,
+                description={"suggested_value": defaults.get(FREE_END)},
+            ): selector.DateSelector(),
+        }
+    )
+
+
+def _validate_free(user_input: Mapping[str, Any]) -> dict[str, str]:
+    """Return the form errors for a submitted range, empty when valid."""
+    errors: dict[str, str] = {}
+
+    if not str(user_input.get(FREE_NAME) or "").strip():
+        errors[FREE_NAME] = ERROR_NO_NAME
+
+    start = parse_date_value(user_input.get(FREE_START))
+    end = parse_date_value(user_input.get(FREE_END))
+
+    # A single day is a valid range, so only an end *before* the start is
+    # rejected -- that would silently cover nothing.
+    if start is None or end is None or end < start:
+        errors[FREE_END] = ERROR_INVALID_RANGE
+
+    return errors
+
+
+def _free_from_input(user_input: Mapping[str, Any], uid: str) -> dict[str, Any]:
+    """Build the stored range from a validated form submission."""
+    return {
+        FREE_ID: uid,
+        FREE_NAME: " ".join(str(user_input[FREE_NAME]).split()),
+        FREE_START: user_input[FREE_START],
+        FREE_END: user_input[FREE_END],
+    }
+
+
+def _free_label(free: Mapping[str, Any]) -> str:
+    """Return a one-line description of a range, for the pick lists."""
+    start = parse_date_value(free.get(FREE_START))
+    end = parse_date_value(free.get(FREE_END))
+    name = free.get(FREE_NAME) or "?"
+
+    if start is None or end is None:
+        return f"{name} | ??"
+    if start == end:
+        return f"{name} | {start.strftime(DATE_FORMAT_RO)}"
+
+    return (
+        f"{name} | {start.strftime(DATE_FORMAT_RO)}"
+        f" - {end.strftime(DATE_FORMAT_RO)}"
+    )
+
+
 def _slot_label(slot: Mapping[str, Any]) -> str:
     """Return a one-line description of a slot, for the pick lists.
 
@@ -254,6 +329,8 @@ class OrarOptionsFlow(OptionsFlow):
     def __init__(self) -> None:
         """Initialise the in-progress timetable."""
         self._slots: list[dict[str, Any]] = []
+        self._free: list[dict[str, Any]] = []
+        self._public_holidays = True
         self._loaded = False
         self._editing: str | None = None
 
@@ -261,9 +338,10 @@ class OrarOptionsFlow(OptionsFlow):
         """Take a working copy of the stored timetable, once per flow."""
         if self._loaded:
             return
-        self._slots = [
-            dict(slot) for slot in self.config_entry.options.get(CONF_ENTRIES, [])
-        ]
+        options = self.config_entry.options
+        self._slots = [dict(slot) for slot in options.get(CONF_ENTRIES, [])]
+        self._free = [dict(free) for free in options.get(CONF_FREE_RANGES, [])]
+        self._public_holidays = options.get(CONF_PUBLIC_HOLIDAYS, True)
         self._loaded = True
 
     async def async_step_init(
@@ -277,12 +355,109 @@ class OrarOptionsFlow(OptionsFlow):
         options = ["adauga"]
         if self._slots:
             options += ["editeaza", "sterge"]
-        options += ["copil", "gata"]
+        options += ["libere", "copil", "gata"]
 
         return self.async_show_menu(
             step_id="init",
             menu_options=options,
-            description_placeholders={"numar": str(len(self._slots))},
+            description_placeholders={
+                "numar": str(len(self._slots)),
+                "libere": str(len(self._free)),
+            },
+        )
+
+    async def async_step_libere(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show the free-days menu."""
+        self._load()
+
+        options = ["adauga_liber"]
+        if self._free:
+            options += ["sterge_liber"]
+        options += ["sarbatori", "init"]
+
+        return self.async_show_menu(
+            step_id="libere",
+            menu_options=options,
+            description_placeholders={
+                "libere": str(len(self._free)),
+                "sarbatori": "pornite" if self._public_holidays else "oprite",
+            },
+        )
+
+    async def async_step_adauga_liber(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Add one stretch of days without school."""
+        self._load()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            errors = _validate_free(user_input)
+            if not errors:
+                self._free.append(_free_from_input(user_input, uuid4().hex))
+                return await self.async_step_libere()
+
+        return self.async_show_form(
+            step_id="adauga_liber",
+            data_schema=_free_schema(dict(user_input or {})),
+            errors=errors,
+        )
+
+    async def async_step_sterge_liber(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Remove one or more free-day ranges."""
+        self._load()
+
+        if user_input is not None:
+            doomed = set(user_input.get(FREE_ID) or ())
+            self._free = [
+                free for free in self._free if free[FREE_ID] not in doomed
+            ]
+            return await self.async_step_libere()
+
+        return self.async_show_form(
+            step_id="sterge_liber",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(FREE_ID, default=[]): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=[
+                                selector.SelectOptionDict(
+                                    value=free[FREE_ID], label=_free_label(free)
+                                )
+                                for free in self._sorted_free()
+                            ],
+                            multiple=True,
+                            mode=selector.SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
+        )
+
+    async def async_step_sarbatori(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Switch the automatic Romanian public holidays on or off."""
+        self._load()
+
+        if user_input is not None:
+            self._public_holidays = bool(user_input.get(CONF_PUBLIC_HOLIDAYS))
+            return await self.async_step_libere()
+
+        return self.async_show_form(
+            step_id="sarbatori",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_PUBLIC_HOLIDAYS,
+                        description={"suggested_value": self._public_holidays},
+                    ): selector.BooleanSelector()
+                }
+            ),
         )
 
     async def async_step_adauga(
@@ -458,7 +633,13 @@ class OrarOptionsFlow(OptionsFlow):
     ) -> ConfigFlowResult:
         """Save the timetable and close the flow."""
         self._load()
-        return self.async_create_entry(data={CONF_ENTRIES: self._sorted_slots()})
+        return self.async_create_entry(
+            data={
+                CONF_ENTRIES: self._sorted_slots(),
+                CONF_FREE_RANGES: self._sorted_free(),
+                CONF_PUBLIC_HOLIDAYS: self._public_holidays,
+            }
+        )
 
     def _sorted_slots(self) -> list[dict[str, Any]]:
         """Return the slots in the order they run during the week."""
@@ -470,6 +651,10 @@ class OrarOptionsFlow(OptionsFlow):
                 str(slot.get(ENTRY_TITLE) or ""),
             ),
         )
+
+    def _sorted_free(self) -> list[dict[str, Any]]:
+        """Return the free-day ranges in calendar order."""
+        return sorted(self._free, key=lambda free: str(free.get(FREE_START) or ""))
 
     def _slot_by_id(self, uid: str | None) -> dict[str, Any] | None:
         """Return the slot with this id, or None if it is gone."""

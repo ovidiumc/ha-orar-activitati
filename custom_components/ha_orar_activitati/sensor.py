@@ -37,6 +37,8 @@ from .const import (
     ATTR_DATE,
     ATTR_DAY_NAME,
     ATTR_FREE,
+    ATTR_FREE_DAY,
+    ATTR_FREE_DAY_NAME,
     ATTR_IS_TOMORROW,
     ATTR_MINUTES_LEFT,
     ATTR_STARTS_IN,
@@ -45,10 +47,13 @@ from .const import (
     CONF_CLASS,
     CONF_COLOR,
     CONF_ENTRIES,
+    CONF_FREE_RANGES,
+    CONF_PUBLIC_HOLIDAYS,
     DEFAULT_COLOR,
     DOMAIN,
     WEEKDAY_NAMES_RO,
 )
+from .freedays import FreeDayLookup, parse_free_ranges
 from .schedule import (
     ScheduleEntry,
     afternoon_entries,
@@ -72,35 +77,46 @@ class OrarSensorEntityDescription(SensorEntityDescription):
     """Describes one of a child's timetable sensors."""
 
     #: Produces the state and the attributes from the parsed timetable.
-    compute: Callable[[Sequence[ScheduleEntry], datetime], tuple[Any, dict[str, Any]]]
+    compute: Callable[
+        [Sequence[ScheduleEntry], datetime, FreeDayLookup],
+        tuple[Any, dict[str, Any]],
+    ]
+
+
+def _day_flags(free: FreeDayLookup, day: date) -> dict[str, Any]:
+    """Return whether school is off on ``day``, and why."""
+    name = free.name_for(day)
+    return {ATTR_FREE_DAY: name is not None, ATTR_FREE_DAY_NAME: name}
 
 
 def _compute_now(
-    entries: Sequence[ScheduleEntry], now: datetime
+    entries: Sequence[ScheduleEntry], now: datetime, free: FreeDayLookup
 ) -> tuple[Any, dict[str, Any]]:
     """Return the slot running right now, if any."""
-    entry = current_entry(entries, now)
+    entry = current_entry(entries, now, is_free=free.is_free)
+    flags = _day_flags(free, now.date())
 
     if entry is None:
-        return None, {ATTR_FREE: True}
+        return None, {ATTR_FREE: True, **flags}
 
     ends_at = datetime.combine(now.date(), entry.end, tzinfo=now.tzinfo)
 
     return entry.title, {
         ATTR_FREE: False,
         ATTR_MINUTES_LEFT: minutes_between(now, ends_at),
+        **flags,
         **entry.as_dict(),
     }
 
 
 def _compute_next(
-    entries: Sequence[ScheduleEntry], now: datetime
+    entries: Sequence[ScheduleEntry], now: datetime, free: FreeDayLookup
 ) -> tuple[Any, dict[str, Any]]:
     """Return the next slot to start, looking into the coming week."""
-    upcoming = next_entry(entries, now)
+    upcoming = next_entry(entries, now, is_free=free.is_free)
 
     if upcoming is None:
-        return None, {ATTR_FREE: True}
+        return None, {ATTR_FREE: True, **_day_flags(free, now.date())}
 
     entry, day = upcoming
     starts_at = datetime.combine(day, entry.start, tzinfo=now.tzinfo)
@@ -110,6 +126,7 @@ def _compute_next(
         ATTR_STARTS_IN: minutes_between(now, starts_at),
         ATTR_DATE: day.isoformat(),
         ATTR_DAY_NAME: WEEKDAY_NAMES_RO[day.weekday()],
+        **_day_flags(free, day),
         **entry.as_dict(),
     }
 
@@ -117,6 +134,7 @@ def _compute_next(
 def _compute_day(
     entries: Sequence[ScheduleEntry],
     day: date,
+    free: FreeDayLookup,
     *,
     today: date | None = None,
 ) -> tuple[Any, dict[str, Any]]:
@@ -125,12 +143,13 @@ def _compute_day(
     The state is the number of slots -- a plain count that works in badges
     and history -- while the slots themselves ride along as attributes.
     """
-    of_the_day = entries_on(entries, day)
+    of_the_day = entries_on(entries, day, is_free=free.is_free)
 
     return len(of_the_day), {
         ATTR_DATE: day.isoformat(),
         ATTR_DAY_NAME: WEEKDAY_NAMES_RO[day.weekday()],
         ATTR_IS_TOMORROW: today is None or day == today + timedelta(days=1),
+        **_day_flags(free, day),
         ATTR_ACTIVITIES: [entry.as_dict() for entry in of_the_day],
         ATTR_AFTERNOON: [
             entry.as_dict() for entry in afternoon_entries(of_the_day)
@@ -139,7 +158,7 @@ def _compute_day(
 
 
 def _compute_lookahead(
-    entries: Sequence[ScheduleEntry], now: datetime
+    entries: Sequence[ScheduleEntry], now: datetime, free: FreeDayLookup
 ) -> tuple[Any, dict[str, Any]]:
     """Return the next day that has anything scheduled.
 
@@ -151,8 +170,11 @@ def _compute_lookahead(
     When the whole week is empty this falls back to tomorrow, so the sensor
     still reports a date and a count of zero rather than going unavailable.
     """
-    day = next_scheduled_day(entries, now.date()) or now.date() + timedelta(days=1)
-    return _compute_day(entries, day, today=now.date())
+    day = (
+        next_scheduled_day(entries, now.date(), is_free=free.is_free)
+        or now.date() + timedelta(days=1)
+    )
+    return _compute_day(entries, day, free, today=now.date())
 
 
 SENSOR_DESCRIPTIONS: tuple[OrarSensorEntityDescription, ...] = (
@@ -172,8 +194,8 @@ SENSOR_DESCRIPTIONS: tuple[OrarSensorEntityDescription, ...] = (
         key="azi",
         translation_key="azi",
         icon="mdi:calendar-today",
-        compute=lambda entries, now: _compute_day(
-            entries, now.date(), today=now.date()
+        compute=lambda entries, now, free: _compute_day(
+            entries, now.date(), free, today=now.date()
         ),
     ),
     OrarSensorEntityDescription(
@@ -248,9 +270,25 @@ class OrarSensor(SensorEntity):
 
         return parsed
 
+    @property
+    def _free_days(self) -> FreeDayLookup:
+        """Return the lookup for days when school is off.
+
+        Rebuilt per call rather than cached: the entry reloads whenever the
+        options change, so there is no stale copy to invalidate, and the
+        holiday years it loads are cached inside the lookup for the one
+        computation that uses it.
+        """
+        return FreeDayLookup(
+            parse_free_ranges(self._entry.options.get(CONF_FREE_RANGES) or []),
+            public_holidays=self._entry.options.get(CONF_PUBLIC_HOLIDAYS, True),
+        )
+
     def _computed(self) -> tuple[Any, dict[str, Any]]:
         """Run this sensor's computation against the current local time."""
-        return self.entity_description.compute(self._entries, dt_util.now())
+        return self.entity_description.compute(
+            self._entries, dt_util.now(), self._free_days
+        )
 
     @property
     def native_value(self) -> Any:
@@ -288,7 +326,7 @@ class OrarSensor(SensorEntity):
         self._cancel_scheduled()
 
         now = dt_util.now()
-        when = next_boundary(self._entries, now)
+        when = next_boundary(self._entries, now, is_free=self._free_days.is_free)
 
         self._unschedule = async_track_point_in_time(
             self.hass, self._handle_boundary, when

@@ -9,7 +9,7 @@
  * Assistant's language cannot break it.
  */
 
-const CARD_VERSION = "1.1.0";
+const CARD_VERSION = "1.2.0";
 
 /** Sensors carrying a child's timetable, keyed by their `vizualizare`. */
 const VIEWS = ["acum", "urmatoarea", "azi", "maine"];
@@ -224,6 +224,20 @@ class OrarActivitatiCard extends HTMLElement {
       ? upcoming.map((slot) => renderSlot(slot)).join("")
       : `<div class="note">Nimic altceva azi</div>`;
 
+    // A free day is not an empty day: the lessons are gone but the
+    // activities are not, so the banner says why school is off rather than
+    // replacing the column.
+    const freeDay = today?.zi_libera
+      ? `<div class="freeday">
+           <ha-icon icon="mdi:party-popper"></ha-icon>
+           <span>Zi liberă${
+             today.denumire_zi_libera
+               ? ` — ${esc(today.denumire_zi_libera)}`
+               : ""
+           }</span>
+         </div>`
+      : "";
+
     return `
       <section class="child" style="--accent: ${esc(color)}">
         <header class="child-head">
@@ -232,6 +246,7 @@ class OrarActivitatiCard extends HTMLElement {
           ${child.clasa ? `<small>(${esc(child.clasa)})</small>` : ""}
         </header>
         <div class="child-body">
+          ${freeDay}
           <div class="section-label">
             Acum${today?.zi ? ` (${esc(today.zi)})` : ""}
           </div>
@@ -295,7 +310,10 @@ class OrarActivitatiCard extends HTMLElement {
     if (!sameDay) return "Urmează";
 
     const { attrs } = blocks[0];
-    const when = `${attrs.zi}, ${formatDate(attrs.data)}`;
+    let when = `${attrs.zi}, ${formatDate(attrs.data)}`;
+    if (attrs.zi_libera && attrs.denumire_zi_libera) {
+      when += ` · ${attrs.denumire_zi_libera}`;
+    }
 
     return attrs.este_maine ? `Mâine (${when})` : when;
   }
@@ -362,6 +380,19 @@ const STYLES = `
     text-transform: uppercase;
     color: var(--secondary-text-color);
   }
+  orar-activitati-card .freeday {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 2px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    border: 1px dashed var(--accent);
+    color: var(--primary-text-color);
+    font-weight: 700;
+  }
+  orar-activitati-card .freeday ha-icon { color: var(--accent); }
   orar-activitati-card .slot {
     display: flex;
     align-items: center;

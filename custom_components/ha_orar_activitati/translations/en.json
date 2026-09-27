@@ -26,11 +26,12 @@
     "step": {
       "init": {
         "title": "Timetable",
-        "description": "Currently {numar} entries. Changes are saved when you choose Done.",
+        "description": "Currently {numar} entries and {libere} free-day ranges. Changes are saved when you choose Done.",
         "menu_options": {
           "adauga": "Add an entry",
           "editeaza": "Edit an entry",
           "sterge": "Remove entries",
+          "libere": "Free days (holidays)",
           "copil": "Child's details",
           "gata": "Done (save)"
         }
@@ -87,13 +88,51 @@
           "clasa": "Class",
           "culoare": "Accent colour"
         }
+      },
+      "libere": {
+        "title": "Free days",
+        "description": "{libere} ranges entered. Romanian public holidays: {sarbatori}. On a free day the lessons drop out of the timetable; activities stay.",
+        "menu_options": {
+          "adauga_liber": "Add a free-day range",
+          "sterge_liber": "Remove free-day ranges",
+          "sarbatori": "Automatic public holidays",
+          "init": "Back"
+        }
+      },
+      "adauga_liber": {
+        "title": "New free-day range",
+        "description": "One range covers a whole school holiday — enter the same date twice for a single day off.",
+        "data": {
+          "denumire": "Name",
+          "data_inceput": "First day",
+          "data_sfarsit": "Last day"
+        },
+        "data_description": {
+          "denumire": "Shown on the card, e.g. Winter holiday."
+        }
+      },
+      "sterge_liber": {
+        "title": "Remove free days",
+        "description": "Everything you tick here is removed when you save.",
+        "data": {
+          "id": "Ranges"
+        }
+      },
+      "sarbatori": {
+        "title": "Automatic public holidays",
+        "description": "Romanian public holidays — including the movable Easter — are worked out automatically. Switch this off if you only want the ranges you entered yourself.",
+        "data": {
+          "sarbatori_legale": "Use Romanian public holidays"
+        }
       }
     },
     "error": {
       "invalid_name": "The name cannot be empty.",
       "already_configured": "Another child already uses this name.",
       "invalid_interval": "The end time must be after the start time.",
-      "no_days": "Pick at least one weekday."
+      "no_days": "Pick at least one weekday.",
+      "invalid_range": "The last day cannot be before the first day.",
+      "no_name": "The name cannot be empty."
     }
   },
   "selector": {
@@ -107,10 +146,18 @@
   },
   "entity": {
     "sensor": {
-      "acum": { "name": "Now" },
-      "urmatoarea": { "name": "Next" },
-      "azi": { "name": "Today" },
-      "maine": { "name": "Tomorrow" }
+      "acum": {
+        "name": "Now"
+      },
+      "urmatoarea": {
+        "name": "Next"
+      },
+      "azi": {
+        "name": "Today"
+      },
+      "maine": {
+        "name": "Tomorrow"
+      }
     }
   }
 }

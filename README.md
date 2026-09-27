@@ -21,6 +21,20 @@ Pentru fiecare copil adăugat se creează un **device** cu patru senzori:
 
 Senzorii se recalculează **exact la fiecare început și sfârșit de oră** și la miezul nopții — deci `Acum` se schimbă în clipa în care se termină ora, nu la următorul minut rotund.
 
+### Zilele libere
+
+Într-o **zi liberă** orele de școală și pauzele dispar din orar, dar **activitățile rămân** — o sărbătoare închide școala, nu anulează antrenamentul de fotbal.
+
+Zilele libere vin din două surse:
+
+**Sărbătorile legale românești** se calculează singure, inclusiv Paștele și Rusaliile, care se mișcă de la an la an. Folosesc biblioteca `holidays`, aceeași pe care o folosește și senzorul Workday din Home Assistant. Le poți opri din *Configurează → Zile libere → Sărbători legale automate*.
+
+**Vacanțele școlare** le introduci tu, ca perioade cu denumire: *Configurează → Zile libere → Adaugă o perioadă liberă*. O perioadă acoperă o vacanță întreagă (prima zi → ultima zi); pentru o singură zi liberă pui aceeași dată de două ori. Perioadele sunt per copil, pentru că frații pot fi la școli cu vacanțe diferite.
+
+Dacă o perioadă introdusă de tine acoperă o sărbătoare legală, **denumirea ta câștigă** — 25 decembrie din interiorul vacanței de iarnă se afișează ca „Vacanța de iarnă", nu ca „Crăciunul".
+
+Senzorii expun `zi_libera` și `denumire_zi_libera` pentru ziua pe care o descriu, iar cardul afișează o bandă cu motivul.
+
 ### Weekendul
 
 Senzorul **Mâine** nu arată pur și simplu ziua următoare, ci **următoarea zi care are ceva în ea**, căutând până la o săptămână înainte. Școala e de luni până vineri, așa că vineri seara „mâine" ar fi o sâmbătă goală, iar duminică ai vedea gol în loc de orarul de luni.
@@ -70,6 +84,8 @@ Toți cei patru senzori poartă identitatea copilului, ca să poți construi un 
 | `data` | data în ISO (`2026-09-24`) |
 | `zi` | numele zilei în română (`Joi`) |
 | `este_maine` | `true` doar dacă ziua e chiar cea de mâine |
+| `zi_libera` | `true` dacă școala e închisă în ziua aceea |
+| `denumire_zi_libera` | de ce — `Vacanța de iarnă`, `Ziua Națională a României` |
 | `activitati` | lista completă a intrărilor zilei, în ordine cronologică |
 | `activitati_dupa_masa` | doar intrările de tip **activitate** |
 
@@ -104,6 +120,7 @@ config/
         ├── schedule.py
         ├── sensor.py
         ├── strings.json
+        ├── freedays.py
         ├── brand/
         │   ├── icon.png
         │   └── icon@2x.png
@@ -136,6 +153,7 @@ Repetă pentru fiecare copil.
 
 - **Adaugă o intrare** — o intrare nouă în orar
 - **Modifică o intrare** / **Șterge intrări**
+- **Zile libere (vacanțe)** — sărbători legale automate + vacanțele tale
 - **Datele copilului** — nume, clasă, culoare
 - **Gata (salvează)** — scrie modificările și reîncarcă senzorii
 

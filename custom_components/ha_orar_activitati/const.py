@@ -15,6 +15,8 @@ CONF_CHILD_NAME: Final = "nume_copil"
 CONF_CLASS: Final = "clasa"
 CONF_COLOR: Final = "culoare"
 CONF_ENTRIES: Final = "intrari"
+CONF_FREE_RANGES: Final = "zile_libere"
+CONF_PUBLIC_HOLIDAYS: Final = "sarbatori_legale"
 
 # --- Keys of a single timetable entry -----------------------------------
 # Kept in Romanian: they are exposed verbatim in the sensor attributes, so
@@ -29,6 +31,18 @@ ENTRY_ROOM: Final = "sala"
 ENTRY_KIND: Final = "tip"
 ENTRY_ONLINE: Final = "online"
 ENTRY_URL: Final = "locatie_url"
+
+# --- Keys of a free-day range -------------------------------------------
+# A range rather than a single date, because school holidays are weeks
+# long: one entry covers "Vacanta de iarna, 20.12 - 07.01".
+
+FREE_ID: Final = "id"
+FREE_START: Final = "data_inceput"
+FREE_END: Final = "data_sfarsit"
+FREE_NAME: Final = "denumire"
+
+#: Country used for the automatic public holidays.
+HOLIDAY_COUNTRY: Final = "RO"
 
 # --- Entry kinds --------------------------------------------------------
 # `activitate` is what makes an entry count as "after school": the
@@ -63,6 +77,17 @@ DEFAULT_COLOR: Final = DEFAULT_COLORS[0]
 #: How a time is rendered in the display attributes, e.g. 11:30.
 TIME_FORMAT: Final = "%H:%M"
 
+#: Romanian display format for dates, e.g. 20.12.2026.
+DATE_FORMAT_RO: Final = "%d.%m.%Y"
+
+#: Non-ISO date formats accepted when parsing, for values edited by hand.
+#: ISO is what the date picker writes and is tried first, separately.
+ACCEPTED_DATE_FORMATS: Final[tuple[str, ...]] = (
+    DATE_FORMAT_RO,
+    "%d/%m/%Y",
+    "%d-%m-%Y",
+)
+
 #: Romanian weekday names, indexed by `date.weekday()` (0 = Monday).
 WEEKDAY_NAMES_RO: Final[tuple[str, ...]] = (
     "Luni",
@@ -95,6 +120,12 @@ ATTR_ICON: Final = "iconita"
 ATTR_MINUTES_LEFT: Final = "minute_ramase"
 ATTR_STARTS_IN: Final = "incepe_in"
 ATTR_FREE: Final = "liber"
+
+#: Set on every sensor for the day it describes: whether school is off, and
+#: why. Activities still run on a free day, so this is not the same as the
+#: day being empty.
+ATTR_FREE_DAY: Final = "zi_libera"
+ATTR_FREE_DAY_NAME: Final = "denumire_zi_libera"
 ATTR_DATE: Final = "data"
 ATTR_DAY_NAME: Final = "zi"
 #: True when the lookahead day really is tomorrow. School stops at the
@@ -111,3 +142,5 @@ ERROR_INVALID_NAME: Final = "invalid_name"
 ERROR_ALREADY_CONFIGURED: Final = "already_configured"
 ERROR_INVALID_INTERVAL: Final = "invalid_interval"
 ERROR_NO_DAYS: Final = "no_days"
+ERROR_INVALID_RANGE: Final = "invalid_range"
+ERROR_NO_NAME: Final = "no_name"
