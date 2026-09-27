@@ -9,7 +9,7 @@
  * Assistant's language cannot break it.
  */
 
-const CARD_VERSION = "1.2.0";
+const CARD_VERSION = "1.4.0";
 
 /** Sensors carrying a child's timetable, keyed by their `vizualizare`. */
 const VIEWS = ["acum", "urmatoarea", "azi", "maine"];
@@ -273,18 +273,33 @@ class OrarActivitatiCard extends HTMLElement {
     const days = new Set(blocks.map(({ attrs }) => attrs.data));
     const sameDay = days.size === 1;
 
-    const lines = blocks.flatMap(({ child, attrs }) =>
-      (attrs.activitati || []).slice(0, limit).map(
-        (slot) => `
-          <div class="tomorrow-line">
-            ${sameDay ? "" : `<span class="tomorrow-day">${esc(attrs.zi)}</span>`}
-            <span class="tomorrow-time">${esc(slot.interval)}</span>
-            <span class="tomorrow-sep">|</span>
-            <span class="tomorrow-who">${esc(child.nume)}:</span>
-            <span>${esc(slot.titlu)}</span>
-          </div>
-        `,
-      ),
+    // Flattened and sorted by when it actually happens, not grouped by
+    // child: with two children looking at different days, grouping put
+    // Tuesday above Monday, which reads as the wrong week.
+    const items = blocks
+      .flatMap(({ child, attrs }) =>
+        (attrs.activitati || [])
+          .slice(0, limit)
+          .map((slot) => ({ child, attrs, slot })),
+      )
+      .sort(
+        (a, b) =>
+          // The ISO date and the zero-padded HH:MM both sort as plain text.
+          a.attrs.data.localeCompare(b.attrs.data) ||
+          a.slot.ora_inceput.localeCompare(b.slot.ora_inceput) ||
+          a.child.nume.localeCompare(b.child.nume, "ro"),
+      );
+
+    const lines = items.map(
+      ({ child, attrs, slot }) => `
+        <div class="tomorrow-line">
+          ${sameDay ? "" : `<span class="tomorrow-day">${esc(attrs.zi)}</span>`}
+          <span class="tomorrow-time">${esc(slot.interval)}</span>
+          <span class="tomorrow-sep">|</span>
+          <span class="tomorrow-who">${esc(child.nume)}:</span>
+          <span>${esc(slot.titlu)}</span>
+        </div>
+      `,
     );
 
     return `
