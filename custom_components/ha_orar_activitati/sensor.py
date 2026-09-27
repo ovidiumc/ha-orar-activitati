@@ -37,6 +37,7 @@ from .const import (
     ATTR_DATE,
     ATTR_DAY_NAME,
     ATTR_FREE,
+    ATTR_IS_TOMORROW,
     ATTR_MINUTES_LEFT,
     ATTR_STARTS_IN,
     ATTR_VIEW,
@@ -56,6 +57,7 @@ from .schedule import (
     minutes_between,
     next_boundary,
     next_entry,
+    next_scheduled_day,
     parse_entries,
 )
 
@@ -113,7 +115,10 @@ def _compute_next(
 
 
 def _compute_day(
-    entries: Sequence[ScheduleEntry], day: date
+    entries: Sequence[ScheduleEntry],
+    day: date,
+    *,
+    today: date | None = None,
 ) -> tuple[Any, dict[str, Any]]:
     """Return the full timetable for one calendar day.
 
@@ -125,11 +130,29 @@ def _compute_day(
     return len(of_the_day), {
         ATTR_DATE: day.isoformat(),
         ATTR_DAY_NAME: WEEKDAY_NAMES_RO[day.weekday()],
+        ATTR_IS_TOMORROW: today is None or day == today + timedelta(days=1),
         ATTR_ACTIVITIES: [entry.as_dict() for entry in of_the_day],
         ATTR_AFTERNOON: [
             entry.as_dict() for entry in afternoon_entries(of_the_day)
         ],
     }
+
+
+def _compute_lookahead(
+    entries: Sequence[ScheduleEntry], now: datetime
+) -> tuple[Any, dict[str, Any]]:
+    """Return the next day that has anything scheduled.
+
+    Not simply tomorrow: school runs Monday to Friday, so on a Friday
+    evening tomorrow would be an empty Saturday and the band would say
+    nothing is coming when Monday is full. Weekend activities still win --
+    a Saturday practice shows as Saturday, not skipped in favour of Monday.
+
+    When the whole week is empty this falls back to tomorrow, so the sensor
+    still reports a date and a count of zero rather than going unavailable.
+    """
+    day = next_scheduled_day(entries, now.date()) or now.date() + timedelta(days=1)
+    return _compute_day(entries, day, today=now.date())
 
 
 SENSOR_DESCRIPTIONS: tuple[OrarSensorEntityDescription, ...] = (
@@ -149,15 +172,15 @@ SENSOR_DESCRIPTIONS: tuple[OrarSensorEntityDescription, ...] = (
         key="azi",
         translation_key="azi",
         icon="mdi:calendar-today",
-        compute=lambda entries, now: _compute_day(entries, now.date()),
+        compute=lambda entries, now: _compute_day(
+            entries, now.date(), today=now.date()
+        ),
     ),
     OrarSensorEntityDescription(
         key="maine",
         translation_key="maine",
         icon="mdi:calendar-arrow-right",
-        compute=lambda entries, now: _compute_day(
-            entries, now.date() + timedelta(days=1)
-        ),
+        compute=_compute_lookahead,
     ),
 )
 

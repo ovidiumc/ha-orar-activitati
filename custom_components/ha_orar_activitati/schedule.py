@@ -206,6 +206,29 @@ def next_entry(
     return None
 
 
+def next_scheduled_day(
+    entries: Sequence[ScheduleEntry], after: date
+) -> date | None:
+    """Return the first day after ``after`` that has anything scheduled.
+
+    This is what the lookahead band shows instead of a literal "tomorrow".
+    School runs Monday to Friday, so on a Friday evening a plain tomorrow
+    would be an empty Saturday, and on Sunday it would be a Monday that is
+    still a day away -- neither tells you what is actually coming next.
+    Weekend activities are not skipped: the rule is "the next day with
+    something on it", so a Saturday practice still wins over Monday.
+
+    Looks a full week ahead and returns None when nothing is scheduled at
+    all, which is the empty-timetable case.
+    """
+    for offset in range(1, 8):
+        day = after + timedelta(days=offset)
+        if entries_on(entries, day):
+            return day
+
+    return None
+
+
 def next_boundary(entries: Sequence[ScheduleEntry], moment: datetime) -> datetime:
     """Return when the sensors must next be recalculated.
 

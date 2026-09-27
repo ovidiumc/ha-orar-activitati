@@ -97,6 +97,11 @@ ATTR_STARTS_IN: Final = "incepe_in"
 ATTR_FREE: Final = "liber"
 ATTR_DATE: Final = "data"
 ATTR_DAY_NAME: Final = "zi"
+#: True when the lookahead day really is tomorrow. School stops at the
+#: weekend, so on a Friday the lookahead is usually Monday, and the card
+#: has to label it by name rather than calling it "tomorrow".
+ATTR_IS_TOMORROW: Final = "este_maine"
+
 ATTR_ACTIVITIES: Final = "activitati"
 ATTR_AFTERNOON: Final = "activitati_dupa_masa"
 

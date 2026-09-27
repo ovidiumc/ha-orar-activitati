@@ -9,7 +9,7 @@
  * Assistant's language cannot break it.
  */
 
-const CARD_VERSION = "1.0.0";
+const CARD_VERSION = "1.1.0";
 
 /** Sensors carrying a child's timetable, keyed by their `vizualizare`. */
 const VIEWS = ["acum", "urmatoarea", "azi", "maine"];
@@ -246,40 +246,58 @@ class OrarActivitatiCard extends HTMLElement {
   _tomorrow(children) {
     const limit = Number(this._config.maine_maxim) || 2;
 
-    const lines = children.flatMap((child) => {
-      const attrs = child.maine?.attributes;
-      const slots = (attrs?.activitati || []).slice(0, limit);
+    // Each child's lookahead is their own next day with something on it, so
+    // two children can be looking at different days -- one with a Saturday
+    // practice, one whose next thing is Monday's first lesson.
+    const blocks = children
+      .map((child) => ({ child, attrs: child.maine?.attributes }))
+      .filter(({ attrs }) => attrs && (attrs.activitati || []).length);
 
-      return slots.map(
+    if (!blocks.length) return "";
+
+    const days = new Set(blocks.map(({ attrs }) => attrs.data));
+    const sameDay = days.size === 1;
+
+    const lines = blocks.flatMap(({ child, attrs }) =>
+      (attrs.activitati || []).slice(0, limit).map(
         (slot) => `
           <div class="tomorrow-line">
+            ${sameDay ? "" : `<span class="tomorrow-day">${esc(attrs.zi)}</span>`}
             <span class="tomorrow-time">${esc(slot.interval)}</span>
             <span class="tomorrow-sep">|</span>
             <span class="tomorrow-who">${esc(child.nume)}:</span>
             <span>${esc(slot.titlu)}</span>
           </div>
         `,
-      );
-    });
-
-    if (!lines.length) return "";
-
-    // Every child's "tomorrow" is the same calendar day, so the heading can
-    // be taken from whichever one loaded first.
-    const attrs = children.find((child) => child.maine)?.maine?.attributes;
-    const heading = attrs
-      ? `${attrs.zi}, ${formatDate(attrs.data)}`
-      : "Mâine";
+      ),
+    );
 
     return `
       <div class="tomorrow">
         <div class="tomorrow-head">
           <ha-icon icon="mdi:calendar"></ha-icon>
-          <span>Mâine (${esc(heading)})</span>
+          <span>${esc(this._lookaheadHeading(blocks, sameDay))}</span>
         </div>
         ${lines.join("")}
       </div>
     `;
+  }
+
+  /**
+   * Label the lookahead band.
+   *
+   * "Mâine" is only honest when the day really is tomorrow. Friday evening
+   * looks ahead to Monday, so the band names the day instead; when the
+   * children are looking at different days it drops to a generic heading
+   * and each line carries its own day.
+   */
+  _lookaheadHeading(blocks, sameDay) {
+    if (!sameDay) return "Urmează";
+
+    const { attrs } = blocks[0];
+    const when = `${attrs.zi}, ${formatDate(attrs.data)}`;
+
+    return attrs.este_maine ? `Mâine (${when})` : when;
   }
 }
 
@@ -400,6 +418,12 @@ const STYLES = `
   orar-activitati-card .tomorrow-line {
     color: var(--primary-text-color);
     line-height: 1.6;
+  }
+  orar-activitati-card .tomorrow-day {
+    display: inline-block;
+    min-width: 5.5em;
+    font-weight: 700;
+    color: var(--secondary-text-color);
   }
   orar-activitati-card .tomorrow-time { font-variant-numeric: tabular-nums; }
   orar-activitati-card .tomorrow-sep { opacity: 0.4; margin: 0 6px; }

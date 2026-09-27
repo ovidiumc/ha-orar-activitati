@@ -17,9 +17,24 @@ Pentru fiecare copil adăugat se creează un **device** cu patru senzori:
 | Acum | denumirea activității care se desfășoară acum, sau `unknown` | `sensor.tudor_acum` |
 | Urmează | denumirea următoarei activități (se uită și în zilele următoare) | `sensor.tudor_urmeaza` |
 | Azi | numărul de intrări din ziua curentă | `sensor.tudor_azi` |
-| Mâine | numărul de intrări de mâine | `sensor.tudor_maine` |
+| Mâine | numărul de intrări din **următoarea zi cu program** | `sensor.tudor_maine` |
 
 Senzorii se recalculează **exact la fiecare început și sfârșit de oră** și la miezul nopții — deci `Acum` se schimbă în clipa în care se termină ora, nu la următorul minut rotund.
+
+### Weekendul
+
+Senzorul **Mâine** nu arată pur și simplu ziua următoare, ci **următoarea zi care are ceva în ea**, căutând până la o săptămână înainte. Școala e de luni până vineri, așa că vineri seara „mâine" ar fi o sâmbătă goală, iar duminică ai vedea gol în loc de orarul de luni.
+
+Activitățile de weekend **nu** sunt sărite: regula e „următoarea zi cu program", deci un antrenament sâmbătă are prioritate față de luni.
+
+| Când ești | Ce arată banda |
+|---|---|
+| Luni–joi | ziua de mâine |
+| Vineri, fără activități în weekend | **Luni** |
+| Vineri, cu activitate sâmbătă | **Sâmbătă** |
+| Sâmbătă / duminică, fără activități | **Luni** |
+
+Atributul `este_maine` spune dacă ziua chiar e mâine. Cardul îl folosește ca să scrie „MÂINE (LUNI, 28 SEPT)" doar când e adevărat, altfel doar numele zilei. Dacă cei doi copii au zile următoare diferite, banda trece pe titlul „Urmează" și fiecare rând își poartă ziua.
 
 ### Atribute
 
@@ -54,6 +69,7 @@ Toți cei patru senzori poartă identitatea copilului, ca să poți construi un 
 |---|---|
 | `data` | data în ISO (`2026-09-24`) |
 | `zi` | numele zilei în română (`Joi`) |
+| `este_maine` | `true` doar dacă ziua e chiar cea de mâine |
 | `activitati` | lista completă a intrărilor zilei, în ordine cronologică |
 | `activitati_dupa_masa` | doar intrările de tip **activitate** |
 
