@@ -28,6 +28,7 @@ from .const import (
     CONF_COLOR,
     CONF_ENTRIES,
     CONF_FREE_RANGES,
+    CONF_IMPORT,
     CONF_PUBLIC_HOLIDAYS,
     DEFAULT_COLOR,
     DOMAIN,
@@ -41,6 +42,7 @@ from .const import (
     ENTRY_TITLE,
     ENTRY_URL,
     ERROR_ALREADY_CONFIGURED,
+    ERROR_IMPORT_FAILED,
     ERROR_INVALID_RANGE,
     ERROR_NO_NAME,
     ERROR_INVALID_INTERVAL,
@@ -56,7 +58,7 @@ from .const import (
     TIME_FORMAT,
     WEEKDAY_NAMES_RO,
 )
-from .freedays import parse_date_value
+from .freedays import IMPORT_SEPARATOR, parse_date_value, parse_import
 from .schedule import parse_time_value
 
 
@@ -372,7 +374,7 @@ class OrarOptionsFlow(OptionsFlow):
         """Show the free-days menu."""
         self._load()
 
-        options = ["adauga_liber"]
+        options = ["adauga_liber", "importa"]
         if self._free:
             options += ["sterge_liber"]
         options += ["sarbatori", "init"]
@@ -403,6 +405,47 @@ class OrarOptionsFlow(OptionsFlow):
             step_id="adauga_liber",
             data_schema=_free_schema(dict(user_input or {})),
             errors=errors,
+        )
+
+    async def async_step_importa(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Paste a whole school year's worth of ranges at once."""
+        self._load()
+        errors: dict[str, str] = {}
+        placeholders = {"separator": IMPORT_SEPARATOR, "respinse": ""}
+
+        if user_input is not None:
+            parsed, rejected = parse_import(str(user_input.get(CONF_IMPORT) or ""))
+
+            if rejected or not parsed:
+                # Nothing is imported unless every line reads cleanly, so a
+                # typo in one date cannot slip a wrong day into the calendar
+                # while the rest look like they worked.
+                errors[CONF_IMPORT] = ERROR_IMPORT_FAILED
+                placeholders["respinse"] = "; ".join(rejected[:5]) or "-"
+            else:
+                for item in parsed:
+                    item[FREE_ID] = uuid4().hex
+                self._free.extend(parsed)
+                return await self.async_step_libere()
+
+        return self.async_show_form(
+            step_id="importa",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_IMPORT,
+                        description={
+                            "suggested_value": (user_input or {}).get(CONF_IMPORT)
+                        },
+                    ): selector.TextSelector(
+                        selector.TextSelectorConfig(multiline=True)
+                    )
+                }
+            ),
+            errors=errors,
+            description_placeholders=placeholders,
         )
 
     async def async_step_sterge_liber(

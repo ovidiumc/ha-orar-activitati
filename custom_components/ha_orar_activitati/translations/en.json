@@ -94,6 +94,7 @@
         "description": "{libere} ranges entered. Romanian public holidays: {sarbatori}. On a free day the lessons drop out of the timetable; activities stay.",
         "menu_options": {
           "adauga_liber": "Add a free-day range",
+          "importa": "Import a whole school year",
           "sterge_liber": "Remove free-day ranges",
           "sarbatori": "Automatic public holidays",
           "init": "Back"
@@ -124,6 +125,13 @@
         "data": {
           "sarbatori_legale": "Use Romanian public holidays"
         }
+      },
+      "importa": {
+        "title": "Import free days",
+        "description": "One range per line: name {separator} first day {separator} last day. Dates as 23.12.2026 or 2026-12-23. Nothing is imported unless every line reads cleanly. Rejected: {respinse}",
+        "data": {
+          "import_text": "Ranges"
+        }
       }
     },
     "error": {
@@ -132,7 +140,8 @@
       "invalid_interval": "The end time must be after the start time.",
       "no_days": "Pick at least one weekday.",
       "invalid_range": "The last day cannot be before the first day.",
-      "no_name": "The name cannot be empty."
+      "no_name": "The name cannot be empty.",
+      "import_failed": "Some lines could not be read — nothing was imported. Check the rejected lines shown above."
     }
   },
   "selector": {

@@ -29,7 +29,16 @@ Zilele libere vin din două surse:
 
 **Sărbătorile legale românești** se calculează singure, inclusiv Paștele și Rusaliile, care se mișcă de la an la an. Folosesc biblioteca `holidays`, aceeași pe care o folosește și senzorul Workday din Home Assistant. Le poți opri din *Configurează → Zile libere → Sărbători legale automate*.
 
-**Vacanțele școlare** le introduci tu, ca perioade cu denumire: *Configurează → Zile libere → Adaugă o perioadă liberă*. O perioadă acoperă o vacanță întreagă (prima zi → ultima zi); pentru o singură zi liberă pui aceeași dată de două ori. Perioadele sunt per copil, pentru că frații pot fi la școli cu vacanțe diferite.
+**Vacanțele școlare** le introduci tu. Cel mai rapid e **Configurează → Zile libere → Importă un an școlar întreg**, unde lipești tot anul dintr-o dată, o perioadă pe linie:
+
+```
+Vacanța de toamnă | 24.10.2026 | 01.11.2026
+Vacanța de iarnă | 23.12.2026 | 10.01.2027
+```
+
+Datele se acceptă atât `23.12.2026` cât și `2026-12-23`. Liniile goale și cele care încep cu `#` sunt ignorate. **Dacă măcar o linie e greșită, nu se importă nimic** — altfel o greșeală de tastare ar strecura o zi greșită în calendar în timp ce restul par în regulă.
+
+Una câte una se adaugă din: *Configurează → Zile libere → Adaugă o perioadă liberă*. O perioadă acoperă o vacanță întreagă (prima zi → ultima zi); pentru o singură zi liberă pui aceeași dată de două ori. Perioadele sunt per copil, pentru că frații pot fi la școli cu vacanțe diferite.
 
 Dacă o perioadă introdusă de tine acoperă o sărbătoare legală, **denumirea ta câștigă** — 25 decembrie din interiorul vacanței de iarnă se afișează ca „Vacanța de iarnă", nu ca „Crăciunul".
 

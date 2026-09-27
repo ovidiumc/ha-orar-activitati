@@ -94,6 +94,7 @@
         "description": "{libere} perioade introduse. Sărbătorile legale românești: {sarbatori}. Într-o zi liberă orele de școală dispar din orar; activitățile rămân.",
         "menu_options": {
           "adauga_liber": "Adaugă o perioadă liberă",
+          "importa": "Importă un an școlar întreg",
           "sterge_liber": "Șterge perioade libere",
           "sarbatori": "Sărbători legale automate",
           "init": "Înapoi"
@@ -124,6 +125,13 @@
         "data": {
           "sarbatori_legale": "Folosește sărbătorile legale românești"
         }
+      },
+      "importa": {
+        "title": "Importă zile libere",
+        "description": "O perioadă pe linie: denumire {separator} prima zi {separator} ultima zi. Datele ca 23.12.2026 sau 2026-12-23. Nu se importă nimic dacă măcar o linie e greșită. Respinse: {respinse}",
+        "data": {
+          "import_text": "Perioade"
+        }
       }
     },
     "error": {
@@ -132,7 +140,8 @@
       "invalid_interval": "Ora de sfârșit trebuie să fie după ora de început.",
       "no_days": "Alege cel puțin o zi.",
       "invalid_range": "Ultima zi nu poate fi înaintea primei zile.",
-      "no_name": "Denumirea nu poate fi goală."
+      "no_name": "Denumirea nu poate fi goală.",
+      "import_failed": "Unele linii n-au putut fi citite — nu s-a importat nimic. Verifică liniile respinse de mai sus."
     }
   },
   "selector": {

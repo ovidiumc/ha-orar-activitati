@@ -94,6 +94,54 @@ def parse_free_ranges(raw_ranges: Iterable[Mapping[str, Any]]) -> list[FreeRange
     return [item for item in parsed if item is not None]
 
 
+#: Separator between the fields of a line in the bulk import.
+IMPORT_SEPARATOR = "|"
+
+
+def parse_import(text: str) -> tuple[list[dict[str, Any]], list[str]]:
+    """Parse a pasted block of free-day ranges.
+
+    One range per line, ``name | first day | last day``. A whole school
+    year is published as a table, so pasting it in one go beats clicking
+    through a date picker twenty times -- and it is the same shape for the
+    second child.
+
+    Returns the parsed ranges and the lines that could not be read, so the
+    caller can save what worked and show what did not.
+    """
+    ranges: list[dict[str, Any]] = []
+    rejected: list[str] = []
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+
+        parts = [part.strip() for part in line.split(IMPORT_SEPARATOR)]
+        if len(parts) != 3:
+            rejected.append(line)
+            continue
+
+        name, raw_start, raw_end = parts
+        start = parse_date_value(raw_start)
+        end = parse_date_value(raw_end)
+
+        if not name or start is None or end is None or end < start:
+            rejected.append(line)
+            continue
+
+        ranges.append(
+            {
+                FREE_ID: "",
+                FREE_NAME: name,
+                FREE_START: start.isoformat(),
+                FREE_END: end.isoformat(),
+            }
+        )
+
+    return ranges, rejected
+
+
 class FreeDayLookup:
     """Answers whether school is off on a given day, and why.
 

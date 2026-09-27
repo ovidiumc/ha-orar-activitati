@@ -18,6 +18,9 @@ CONF_ENTRIES: Final = "intrari"
 CONF_FREE_RANGES: Final = "zile_libere"
 CONF_PUBLIC_HOLIDAYS: Final = "sarbatori_legale"
 
+#: Free-text field of the bulk import step.
+CONF_IMPORT: Final = "import_text"
+
 # --- Keys of a single timetable entry -----------------------------------
 # Kept in Romanian: they are exposed verbatim in the sensor attributes, so
 # renaming them would break any card or template reading them.
@@ -144,3 +147,4 @@ ERROR_INVALID_INTERVAL: Final = "invalid_interval"
 ERROR_NO_DAYS: Final = "no_days"
 ERROR_INVALID_RANGE: Final = "invalid_range"
 ERROR_NO_NAME: Final = "no_name"
+ERROR_IMPORT_FAILED: Final = "import_failed"
